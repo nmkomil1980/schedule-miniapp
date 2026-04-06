@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Расписание КГУ</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    /* ═══════════════════════════════════════════
+       TOKENS & THEME
+    ═══════════════════════════════════════════ */
+    :root {
+      --bg:          #0d1117;
+      --bg-card:     #161b22;
+      --bg-hover:    #1c2230;
+      --border:      #21262d;
+      --accent:      #4f8ef7;
+      --accent-glow: rgba(79,142,247,0.18);
+      --accent-dim:  rgba(79,142,247,0.08);
+      --text:        #e6edf3;
+      --text-sub:    #8b949e;
+      --text-muted:  #484f58;
+      --today:       #3fb950;
+      --today-bg:    rgba(63,185,80,0.08);
+      --red:         #f85149;
+      --red-bg:      rgba(248,81,73,0.08);
+      --gold:        #e3b341;
+      --gold-bg:     rgba(227,179,65,0.08);
+      --radius:      14px;
+      --radius-sm:   8px;
+      --shadow:      0 4px 24px rgba(0,0,0,0.4);
+      --font-mono:   'JetBrains Mono', 'Fira Code', monospace;
+    }
+
+    /* Telegram light theme overrides */
+    body.tg-light {
+      --bg:          #f0f2f5;
+      --bg-card:     #ffffff;
+      --bg-hover:    #f5f7fa;
+      --border:      #e1e4e8;
+      --text:        #1c2128;
+      --text-sub:    #57606a;
+      --text-muted:  #8c959f;
+      --shadow:      0 2px 12px rgba(0,0,0,0.08);
+    }
+
+    /* ═══════════════════════════════════════════
+       RESET & BASE
+    ═══════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { height: 100%; }
+
+    body {
+      font-family: -apple-system, 'SF Pro Text', 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100%;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ═══════════════════════════════════════════
+       LAYOUT SHELL
+    ═══════════════════════════════════════════ */
+    #app { display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* Bottom tab bar */
+    .tab-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+      display: flex;
+      z-index: 100;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .tab-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 10px 4px;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: color 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .tab-btn svg { width: 22px; height: 22px; transition: transform 0.2s; }
+    .tab-btn.active { color: var(--accent); }
+    .tab-btn.active svg { transform: scale(1.1); }
+
+    /* Page container */
+    .page {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      padding-bottom: calc(60px + env(safe-area-inset-bottom));
+      animation: fadeIn 0.22s ease;
+    }
+    .page.active { display: flex; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ═══════════════════════════════════════════
+       COMPONENTS
+    ═══════════════════════════════════════════ */
+
+    /* ── Page Header ── */
+    .page-header {
+      padding: 20px 16px 12px;
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      z-index: 10;
+      border-bottom: 1px solid var(--border);
+    }
+    .page-header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+    }
+    .page-header p {
+      font-size: 13px;
+      color: var(--text-sub);
+      margin-top: 2px;
+    }
+
+    /* ── Back header ── */
+    .back-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      z-index: 10;
+      border-bottom: 1px solid var(--border);
+    }
+    .back-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.15s;
+    }
+    .back-btn:active { background: var(--bg-hover); }
+    .back-header-text h2 { font-size: 17px; font-weight: 600; }
+    .back-header-text p { font-size: 12px; color: var(--text-sub); }
+
+    /* ── Search bar ── */
+    .search-wrap {
+      padding: 10px 16px;
+      position: sticky;
+      top: 57px;
+      background: var(--bg);
+      z-index: 9;
+    }
+    .search-input {
+      width: 100%;
+      padding: 10px 14px 10px 38px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-input:focus { border-color: var(--accent); }
+    .search-input::placeholder { color: var(--text-muted); }
+    .search-wrap-inner {
+      position: relative;
+    }
+    .search-icon {
+      position: absolute;
+      left: 11px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    /* ── List items ── */
+    .list { padding: 8px 16px 0; display: flex; flex-direction: column; gap: 6px; }
+    .list-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .list-item:active,
+    .list-item:hover { background: var(--bg-hover); border-color: var(--accent); }
+    .list-item-text { font-size: 15px; font-weight: 500; }
+    .list-item-sub  { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
+    .list-item-arrow { color: var(--text-muted); flex-shrink: 0; }
+
+    /* groups grid */
+    .groups-grid {
+      padding: 8px 16px 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .group-btn {
+      padding: 14px 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    }
+    .group-btn:active { transform: scale(0.97); }
+    .group-btn:hover  { background: var(--bg-hover); border-color: var(--accent); }
+
+    /* ── Section chip ── */
+    .section-chip {
+      margin: 16px 16px 0;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    /* ── Spinner ── */
+    .spinner-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 0;
+    }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Empty state ── */
+    .empty {
+      text-align: center;
+      padding: 60px 24px;
+      color: var(--text-sub);
+    }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty h3 { font-size: 17px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+    .empty p  { font-size: 14px; line-height: 1.5; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: calc(72px + env(safe-area-inset-bottom));
+      left: 50%; transform: translateX(-50%) translateY(20px);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 18px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.25s, transform 0.25s;
+      z-index: 200;
+      pointer-events: none;
+      box-shadow: var(--shadow);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ═══════════════════════════════════════════
+       SCHEDULE VIEW
+    ═══════════════════════════════════════════ */
+    .sched-header {
+      padding: 16px 16px 12px;
+      background: var(--bg);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border-bottom: 1px solid var(--border);
+    }
+    .sched-top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .sched-title h2 { font-size: 18px; font-weight: 700; }
+    .sched-title p  { font-size: 12px; color: var(--text-sub); }
+
+    .month-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2px 4px;
+    }
+    .month-nav-btn {
+      width: 36px; height: 36px;
+      border: none; background: none;
+      color: var(--text);
+      display: flex; align-items: center; justify-content: center;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.15s;
+    }
+    .month-nav-btn:active { background: var(--bg-hover); }
+    .month-nav-label {
+      font-size: 15px;
+      font-weight: 600;
+      flex: 1;
+      text-align: center;
+    }
+
+    /* Save button */
+    .save-bar {
+      padding: 0 16px 12px;
+    }
+    .save-btn {
+      width: 100%;
+      padding: 11px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-sub);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .save-btn.saved {
+      background: var(--gold-bg);
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    /* Day blocks */
+    .sched-body { padding: 0 16px 12px; }
+
+    .day-block { margin-bottom: 16px; }
+    .day-label {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 8px;
+      padding: 0 2px;
+    }
+    .day-num {
+      font-size: 26px;
+      font-weight: 800;
+      line-height: 1;
+      color: var(--accent);
+      font-family: var(--font-mono);
+    }
+    .day-name {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: var(--text-sub);
+      text-transform: uppercase;
+    }
+    .day-today-badge {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      background: var(--today-bg);
+      color: var(--today);
+      padding: 2px 8px;
+      border-radius: 20px;
+      border: 1px solid rgba(63,185,80,0.3);
+    }
+
+    .day-block.is-today .day-num { color: var(--today); }
+
+    /* Lesson card */
+    .lesson-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      margin-bottom: 6px;
+      display: flex;
+      gap: 12px;
+      animation: slideUp 0.2s ease both;
+    }
+    .lesson-card.is-now {
+      border-left-color: var(--today);
+      background: var(--today-bg);
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .lesson-time {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      font-family: var(--font-mono);
+      white-space: nowrap;
+      min-width: 44px;
+      padding-top: 1px;
+    }
+    .lesson-card.is-now .lesson-time { color: var(--today); }
+    .lesson-info { flex: 1; min-width: 0; }
+    .lesson-name {
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.35;
+      margin-bottom: 4px;
+      word-break: break-word;
+    }
+    .lesson-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 10px;
+      font-size: 12px;
+      color: var(--text-sub);
+    }
+    .lesson-meta span { display: flex; align-items: center; gap: 3px; }
+    .lesson-type {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      background: var(--accent-dim);
+      color: var(--accent);
+      padding: 2px 7px;
+      border-radius: 20px;
+      margin-bottom: 5px;
+    }
+
+    /* ═══════════════════════════════════════════
+       HOME / MY GROUP
+    ═══════════════════════════════════════════ */
+    .home-hero {
+      padding: 24px 16px 12px;
+      background: linear-gradient(160deg, var(--accent-glow) 0%, transparent 60%);
+    }
+    .home-greeting {
+      font-size: 13px;
+      color: var(--text-sub);
+      margin-bottom: 4px;
+    }
+    .home-title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 4px;
+    }
+
+    .saved-card {
+      margin: 0 16px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--accent);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 0 0 1px var(--accent-glow), var(--shadow);
+    }
+    .saved-card-body {
+      padding: 16px;
+    }
+    .saved-card-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+    .saved-card-name {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    .saved-card-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .saved-action-btn {
+      padding: 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.15s;
+    }
+    .saved-action-btn:active { background: var(--bg-hover); }
+    .saved-action-btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .saved-action-btn.primary:active { opacity: 0.85; }
+
+    .no-saved-card {
+      margin: 0 16px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px 16px;
+      text-align: center;
+    }
+    .no-saved-icon { font-size: 40px; margin-bottom: 10px; }
+    .no-saved-title { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+    .no-saved-sub { font-size: 13px; color: var(--text-sub); margin-bottom: 16px; line-height: 1.5; }
+    .primary-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 11px 20px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: opacity 0.15s;
+    }
+    .primary-btn:active { opacity: 0.85; }
+
+    /* Today widget */
+    .today-widget {
+      margin: 0 16px 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .today-widget-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--today-bg);
+    }
+    .today-widget-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--today);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .today-count {
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(63,185,80,0.15);
+      color: var(--today);
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+    .today-lesson-mini {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .today-lesson-mini:last-child { border-bottom: none; }
+    .today-time {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--today);
+      font-family: var(--font-mono);
+      min-width: 40px;
+    }
+    .today-name { font-size: 13px; font-weight: 500; }
+    .today-room { font-size: 11px; color: var(--text-sub); }
+  </style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ═══════════ PAGES ═══════════ -->
+
+  <!-- HOME -->
+  <div class="page active" id="page-home">
+    <div class="home-hero">
+      <div class="home-greeting" id="home-greeting">Добро пожаловать</div>
+      <div class="home-title">Расписание КГУ</div>
+    </div>
+
+    <div id="home-saved-area">
+      <div class="spinner-wrap"><div class="spinner"></div></div>
+    </div>
+
+    <div id="home-today-area"></div>
+  </div>
+
+  <!-- SEARCH / SELECT -->
+  <div class="page" id="page-search">
+    <div class="page-header">
+      <h1 id="search-page-title">Институт</h1>
+      <p id="search-page-sub">Выберите ваш институт</p>
+    </div>
+    <div class="search-wrap">
+      <div class="search-wrap-inner">
+        <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="search-input" id="search-input" type="search" placeholder="Поиск..." />
+      </div>
+    </div>
+    <div id="search-list" class="list"></div>
+  </div>
+
+  <!-- SCHEDULE -->
+  <div class="page" id="page-schedule">
+    <div class="sched-header">
+      <div class="sched-top">
+        <button class="back-btn" id="sched-back-btn" onclick="goBackFromSchedule()">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <div class="sched-title">
+          <h2 id="sched-group-name">Группа</h2>
+          <p id="sched-group-sub">Расписание</p>
+        </div>
+      </div>
+      <div class="save-bar">
+        <button class="save-btn" id="sched-save-btn" onclick="toggleSaveGroup()">
+          <span id="sched-save-icon">☆</span>
+          <span id="sched-save-text">Сохранить группу</span>
+        </button>
+      </div>
+      <div class="month-nav">
+        <button class="month-nav-btn" onclick="changeMonth(-1)">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <span class="month-nav-label" id="month-label">Апрель 2025</span>
+        <button class="month-nav-btn" onclick="changeMonth(1)">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="sched-body" id="sched-body">
+      <div class="spinner-wrap"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Tab bar -->
+<nav class="tab-bar">
+  <button class="tab-btn active" id="tab-home" onclick="switchTab('home')">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Главная
+  </button>
+  <button class="tab-btn" id="tab-search" onclick="switchTab('search')">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    Поиск
+  </button>
+</nav>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════ -->
+<script>
+/* ───── Telegram WebApp init ───── */
+const tg = window.Telegram?.WebApp;
+if (tg) {
+  tg.ready();
+  tg.expand();
+  if (tg.colorScheme === 'light') document.body.classList.add('tg-light');
+}
+
+/* ───── Constants ───── */
+const API_BASE = 'https://apeks.tksu.ru/api/call/schedule-schedule/student';
+const API_TOKEN = 'ccbce6b6-80b4-2e23-356e-39c53d75e8e8';
+const MONTH_NAMES = ['Январь','Февраль','Март','Апрель','Май','Июнь',
+                     'Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const DAY_NAMES   = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+
+/* ───── State ───── */
+let state = {
+  allData: null,          // raw API data
+  institutes: [],
+  step: 'institutes',     // institutes | courses | groups
+  selectedInstitute: null,
+  selectedCourse: null,
+  scheduleGroupId: null,
+  scheduleGroupName: null,
+  scheduleInstId: null,
+  scheduleCourseId: null,
+  schedMonth: new Date().getMonth() + 1,
+  schedYear: new Date().getFullYear(),
+  savedGroup: null,       // { id, name, instId, courseId }
+  scheduleCache: {},
+  dataCache: null,
+  dataCacheTs: 0,
+};
+
+/* ───── Storage helpers ───── */
+function storageGet(key) {
+  try { return JSON.parse(localStorage.getItem(key)); } catch { return null; }
+}
+function storageSet(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+}
+
+function loadSavedGroup() {
+  state.savedGroup = storageGet('kgu_saved_group');
+}
+function persistSavedGroup() {
+  storageSet('kgu_saved_group', state.savedGroup);
+}
+
+/* ───── Toast ───── */
+function showToast(msg, duration = 2200) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), duration);
+}
+
+/* ───── API ───── */
+async function apiRequest(params = {}) {
+  const url = new URL(API_BASE);
+  url.searchParams.set('token', API_TOKEN);
+  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+  const res = await fetch(url);
+  const json = await res.json();
+  if (json.status === 1) return json.data;
+  throw new Error('API error');
+}
+
+async function getAllData() {
+  const now = Date.now();
+  if (state.dataCache && now - state.dataCacheTs < 86400000) return state.dataCache;
+  const data = await apiRequest();
+  state.dataCache = data;
+  state.dataCacheTs = now;
+  return data;
+}
+
+async function getSchedule(groupId, month, year) {
+  const key = `${groupId}_${month}_${year}`;
+  if (state.scheduleCache[key]) return state.scheduleCache[key];
+  const data = await apiRequest({ group_id: groupId, month, year });
+  state.scheduleCache[key] = data;
+  return data;
+}
+
+/* ───── Parsing helpers ───── */
+function parseInstitutes(data) {
+  if (!data?.groups) return [];
+  return Object.entries(data.groups)
+    .filter(([, v]) => v.items)
+    .map(([id, v]) => ({ id, name: v.name }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+}
+function parseCourses(data, instId) {
+  const inst = data?.groups?.[instId];
+  if (!inst?.items) return [];
+  return Object.entries(inst.items)
+    .filter(([, v]) => v.items)
+    .map(([id, v]) => ({ id, name: v.name }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+}
+function parseGroups(data, instId, courseId) {
+  const course = data?.groups?.[instId]?.items?.[courseId];
+  if (!course?.items) return [];
+  return Object.entries(course.items)
+    .map(([id, v]) => ({ id: parseInt(id), name: v.name }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+}
+
+/* ───── Tab switching ───── */
+function switchTab(tab) {
+  // highlight tabs
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+
+  // show page
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+
+  if (tab === 'search') {
+    document.getElementById('page-search').classList.add('active');
+    resetSearch();
+  } else if (tab === 'home') {
+    document.getElementById('page-home').classList.add('active');
+    renderHome();
+  }
+}
+
+/* ───── HOME PAGE ───── */
+function renderHome() {
+  loadSavedGroup();
+
+  // Greeting
+  const hour = new Date().getHours();
+  const greet = hour < 12 ? 'Доброе утро ☀️' : hour < 18 ? 'Добрый день 🌤' : 'Добрый вечер 🌙';
+  const tgUser = tg?.initDataUnsafe?.user;
+  const name = tgUser ? `, ${tgUser.first_name}` : '';
+  document.getElementById('home-greeting').textContent = greet + name;
+
+  const savedArea = document.getElementById('home-saved-area');
+  const todayArea = document.getElementById('home-today-area');
+
+  if (state.savedGroup) {
+    savedArea.innerHTML = `
+      <div class="saved-card">
+        <div class="saved-card-body">
+          <div class="saved-card-label">⭐ Сохранённая группа</div>
+          <div class="saved-card-name">${escHtml(state.savedGroup.name)}</div>
+          <div class="saved-card-actions">
+            <button class="saved-action-btn primary" onclick="openSavedSchedule()">
+              📅 Расписание
+            </button>
+            <button class="saved-action-btn" onclick="openTodayFromHome()">
+              📌 Сегодня
+            </button>
+          </div>
+        </div>
+      </div>`;
+
+    // Load today's lessons
+    todayArea.innerHTML = '';
+    loadTodayWidget();
+  } else {
+    savedArea.innerHTML = `
+      <div class="no-saved-card">
+        <div class="no-saved-icon">📚</div>
+        <div class="no-saved-title">Выберите свою группу</div>
+        <div class="no-saved-sub">Найдите группу через поиск и сохраните её для быстрого доступа к расписанию</div>
+        <button class="primary-btn" onclick="switchTab('search')">
+          Найти группу
+        </button>
+      </div>`;
+    todayArea.innerHTML = '';
+  }
+}
+
+async function loadTodayWidget() {
+  if (!state.savedGroup) return;
+  const todayArea = document.getElementById('home-today-area');
+  const now = new Date();
+  try {
+    const data = await getSchedule(state.savedGroup.id, now.getMonth() + 1, now.getFullYear());
+    const todayStr = formatDateKey(now);
+    const lessons = (data?.lessons || []).filter(l => l.date === todayStr);
+    const times = {};
+    (data?.lessonTimes || []).forEach(t => { times[t.id] = t; });
+
+    if (lessons.length === 0) {
+      todayArea.innerHTML = `
+        <div class="section-chip">📌 Сегодня</div>
+        <div style="padding:16px 16px 0">
+          <div class="today-widget">
+            <div class="today-widget-head">
+              <div class="today-widget-title">😴 Сегодня занятий нет</div>
+            </div>
+          </div>
+        </div>`;
+      return;
+    }
+
+    const sorted = [...lessons].sort((a, b) => {
+      const ta = times[a.lesson_time_id];
+      const tb = times[b.lesson_time_id];
+      return (ta?.hour_from ?? 0) - (tb?.hour_from ?? 0);
+    });
+
+    const items = sorted.map(l => {
+      const t = times[l.lesson_time_id];
+      const time = t ? `${t.hour_from}:${String(t.minute_from).padStart(2,'0')}` : '??:??';
+      const room = l.classroom ? `Каб. ${l.classroom}` : '';
+      return `<div class="today-lesson-mini">
+        <div class="today-time">${time}</div>
+        <div>
+          <div class="today-name">${escHtml(l.discipline || 'Занятие')}</div>
+          ${room ? `<div class="today-room">${escHtml(room)}</div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+
+    todayArea.innerHTML = `
+      <div class="section-chip">📌 Сегодня</div>
+      <div style="padding:16px 16px 0">
+        <div class="today-widget">
+          <div class="today-widget-head">
+            <div class="today-widget-title">
+              <span>Занятия</span>
+            </div>
+            <div class="today-count">${sorted.length} ${pluralLesson(sorted.length)}</div>
+          </div>
+          ${items}
+        </div>
+      </div>`;
+  } catch (e) {
+    todayArea.innerHTML = '';
+  }
+}
+
+function openSavedSchedule() {
+  if (!state.savedGroup) return;
+  openSchedule(
+    state.savedGroup.id,
+    state.savedGroup.name,
+    state.savedGroup.instId,
+    state.savedGroup.courseId
+  );
+}
+function openTodayFromHome() {
+  if (!state.savedGroup) return;
+  openSchedule(
+    state.savedGroup.id,
+    state.savedGroup.name,
+    state.savedGroup.instId,
+    state.savedGroup.courseId,
+    true  // scroll to today
+  );
+}
+
+/* ───── SEARCH / SELECTION FLOW ───── */
+function resetSearch() {
+  state.step = 'institutes';
+  document.getElementById('search-page-title').textContent = 'Институт';
+  document.getElementById('search-page-sub').textContent = 'Выберите ваш институт';
+  document.getElementById('search-input').value = '';
+  renderSearchList();
+}
+
+function renderSearchList() {
+  const listEl = document.getElementById('search-list');
+  listEl.innerHTML = `<div class="spinner-wrap"><div class="spinner"></div></div>`;
+
+  if (state.step === 'institutes') {
+    loadInstitutesList();
+  } else if (state.step === 'courses') {
+    loadCoursesList();
+  } else if (state.step === 'groups') {
+    loadGroupsList();
+  }
+}
+
+async function loadInstitutesList() {
+  try {
+    const data = await getAllData();
+    const institutes = parseInstitutes(data);
+    renderSelectableList(institutes, (item) => {
+      state.selectedInstitute = item;
+      state.step = 'courses';
+      document.getElementById('search-page-title').textContent = 'Курс';
+      document.getElementById('search-page-sub').textContent = item.name;
+      document.getElementById('search-input').value = '';
+      renderSearchList();
+    });
+  } catch {
+    showError('search-list', 'Не удалось загрузить данные. Проверьте интернет.');
+  }
+}
+async function loadCoursesList() {
+  try {
+    const data = await getAllData();
+    const courses = parseCourses(data, state.selectedInstitute.id);
+    renderSelectableList(courses, (item) => {
+      state.selectedCourse = item;
+      state.step = 'groups';
+      document.getElementById('search-page-title').textContent = 'Группа';
+      document.getElementById('search-page-sub').textContent = item.name;
+      document.getElementById('search-input').value = '';
+      renderSearchList();
+    }, true);
+  } catch {
+    showError('search-list', 'Не удалось загрузить курсы.');
+  }
+}
+async function loadGroupsList() {
+  try {
+    const data = await getAllData();
+    const groups = parseGroups(data, state.selectedInstitute.id, state.selectedCourse.id);
+    renderGroupList(groups);
+  } catch {
+    showError('search-list', 'Не удалось загрузить группы.');
+  }
+}
+
+function renderSelectableList(items, onClick, hasCourseBack = false) {
+  const listEl = document.getElementById('search-list');
+  const query = document.getElementById('search-input').value.toLowerCase();
+  const filtered = items.filter(i => i.name.toLowerCase().includes(query));
+
+  if (filtered.length === 0) {
+    listEl.innerHTML = `<div class="empty"><div class="empty-icon">🔍</div><h3>Ничего не найдено</h3><p>Попробуйте изменить запрос</p></div>`;
+    return;
+  }
+
+  const backBtn = state.step !== 'institutes' ? `
+    <div style="padding: 0 16px 8px;">
+      <button class="save-btn" style="gap:6px" onclick="goBackInSearch()">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Назад
+      </button>
+    </div>` : '';
+
+  listEl.innerHTML = backBtn + filtered.map(item => `
+    <div class="list-item" onclick='selectItem(${JSON.stringify(item)})'>
+      <div>
+        <div class="list-item-text">${escHtml(item.name)}</div>
+      </div>
+      <svg class="list-item-arrow" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+    </div>`).join('');
+}
+
+function selectItem(item) {
+  if (state.step === 'institutes') {
+    state.selectedInstitute = item;
+    state.step = 'courses';
+    document.getElementById('search-page-title').textContent = 'Курс';
+    document.getElementById('search-page-sub').textContent = item.name;
+    document.getElementById('search-input').value = '';
+    renderSearchList();
+  } else if (state.step === 'courses') {
+    state.selectedCourse = item;
+    state.step = 'groups';
+    document.getElementById('search-page-title').textContent = 'Группа';
+    document.getElementById('search-page-sub').textContent = item.name;
+    document.getElementById('search-input').value = '';
+    renderSearchList();
+  }
+}
+
+function renderGroupList(groups) {
+  const listEl = document.getElementById('search-list');
+  const query = document.getElementById('search-input').value.toLowerCase();
+  const filtered = groups.filter(g => g.name.toLowerCase().includes(query));
+
+  if (filtered.length === 0) {
+    listEl.innerHTML = `<div class="empty"><div class="empty-icon">🔍</div><h3>Ничего не найдено</h3></div>`;
+    return;
+  }
+
+  const backBtn = `<div style="padding: 0 16px 8px;">
+    <button class="save-btn" style="gap:6px" onclick="goBackInSearch()">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Назад
+    </button>
+  </div>`;
+
+  listEl.innerHTML = backBtn + `<div class="groups-grid">` +
+    filtered.map(g => `<button class="group-btn" onclick="openSchedule(${g.id},'${escAttr(g.name)}','${escAttr(state.selectedInstitute.id)}','${escAttr(state.selectedCourse.id)}')">${escHtml(g.name)}</button>`).join('') +
+    `</div>`;
+}
+
+function goBackInSearch() {
+  if (state.step === 'courses') {
+    state.step = 'institutes';
+    document.getElementById('search-page-title').textContent = 'Институт';
+    document.getElementById('search-page-sub').textContent = 'Выберите ваш институт';
+  } else if (state.step === 'groups') {
+    state.step = 'courses';
+    document.getElementById('search-page-title').textContent = 'Курс';
+    document.getElementById('search-page-sub').textContent = state.selectedInstitute?.name || '';
+  }
+  document.getElementById('search-input').value = '';
+  renderSearchList();
+}
+
+/* ───── Search input ───── */
+let searchTimeout;
+document.getElementById('search-input').addEventListener('input', () => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    if (state.step === 'groups') renderGroupList([]);  // will be populated
+    renderSearchList();
+  }, 200);
+});
+
+/* ───── SCHEDULE PAGE ───── */
+async function openSchedule(groupId, groupName, instId, courseId, scrollToday = false) {
+  state.scheduleGroupId = groupId;
+  state.scheduleGroupName = groupName;
+  state.scheduleInstId = instId;
+  state.scheduleCourseId = courseId;
+
+  const now = new Date();
+  state.schedMonth = now.getMonth() + 1;
+  state.schedYear = now.getFullYear();
+
+  // hide tabs, show schedule page
+  document.querySelector('.tab-bar').style.display = 'none';
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-schedule').classList.add('active');
+
+  document.getElementById('sched-group-name').textContent = groupName;
+  document.getElementById('sched-group-sub').textContent = `${instId ? 'Институт ' + instId : ''} · Курс ${courseId || ''}`;
+
+  updateMonthLabel();
+  updateSaveButton();
+  await loadScheduleData(scrollToday);
+}
+
+function goBackFromSchedule() {
+  document.querySelector('.tab-bar').style.display = 'flex';
+  document.getElementById('page-schedule').classList.remove('active');
+  // restore last active tab
+  const activeTab = document.querySelector('.tab-btn.active');
+  const tabId = activeTab?.id?.replace('tab-', '') || 'home';
+  document.getElementById(`page-${tabId}`).classList.add('active');
+  if (tabId === 'home') renderHome();
+}
+
+async function loadScheduleData(scrollToday = false) {
+  const body = document.getElementById('sched-body');
+  body.innerHTML = `<div class="spinner-wrap"><div class="spinner"></div></div>`;
+  try {
+    const data = await getSchedule(state.scheduleGroupId, state.schedMonth, state.schedYear);
+    renderScheduleBody(data, scrollToday);
+  } catch {
+    body.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><h3>Ошибка загрузки</h3><p>Не удалось получить расписание. Попробуйте позже.</p></div>`;
+  }
+}
+
+function renderScheduleBody(data, scrollToday = false) {
+  const body = document.getElementById('sched-body');
+  const lessons = data?.lessons || [];
+  const times = {};
+  (data?.lessonTimes || []).forEach(t => { times[t.id] = t; });
+
+  if (lessons.length === 0) {
+    body.innerHTML = `<div class="empty"><div class="empty-icon">😴</div><h3>Занятий нет</h3><p>В этом месяце занятий не найдено</p></div>`;
+    return;
+  }
+
+  // Group by date
+  const byDate = {};
+  lessons.forEach(l => {
+    if (!byDate[l.date]) byDate[l.date] = [];
+    byDate[l.date].push(l);
+  });
+
+  const today = formatDateKey(new Date());
+  const nowHour = new Date().getHours();
+  const nowMin  = new Date().getMinutes();
+
+  // Sort dates
+  const sortedDates = Object.keys(byDate).sort((a, b) => {
+    const da = parseDateStr(a), db = parseDateStr(b);
+    return da - db;
+  });
+
+  let html = '';
+  let todayId = '';
+  let delay = 0;
+
+  sortedDates.forEach(dateStr => {
+    const dateObj = parseDateStr(dateStr);
+    const isToday = dateStr === today;
+    const dayNum  = dateObj.getDate();
+    const dayName = DAY_NAMES[dateObj.getDay()];
+    const id = `day-${dateStr.replace(/\./g, '-')}`;
+    if (isToday) todayId = id;
+
+    const sortedLessons = [...byDate[dateStr]].sort((a, b) => {
+      const ta = times[a.lesson_time_id];
+      const tb = times[b.lesson_time_id];
+      return (ta?.hour_from ?? 0) - (tb?.hour_from ?? 0);
+    });
+
+    html += `<div class="day-block ${isToday ? 'is-today' : ''}" id="${id}">`;
+    html += `<div class="day-label">
+      <span class="day-num">${dayNum}</span>
+      <span class="day-name">${dayName}</span>
+      ${isToday ? '<span class="day-today-badge">сегодня</span>' : ''}
+    </div>`;
+
+    sortedLessons.forEach(lesson => {
+      const t = times[lesson.lesson_time_id];
+      const time = t ? `${t.hour_from}:${String(t.minute_from).padStart(2,'0')}` : '??:??';
+      const isNow = isToday && t &&
+        (t.hour_from < nowHour || (t.hour_from === nowHour && t.minute_from <= nowMin)) &&
+        (t.hour_to > nowHour || (t.hour_to === nowHour));
+
+      const discipline = lesson.discipline || 'Занятие';
+      const classroom  = lesson.classroom || '';
+      const teachers   = (lesson.staffNames || []).join(', ');
+      const classType  = lesson.class_type_name || '';
+
+      html += `<div class="lesson-card ${isNow ? 'is-now' : ''}" style="animation-delay:${delay}ms">
+        <div class="lesson-time">${time}</div>
+        <div class="lesson-info">
+          ${classType ? `<div class="lesson-type">${escHtml(classType)}</div>` : ''}
+          <div class="lesson-name">${escHtml(discipline)}</div>
+          <div class="lesson-meta">
+            ${classroom ? `<span>🏫 ${escHtml(classroom)}</span>` : ''}
+            ${teachers ? `<span>👤 ${escHtml(teachers)}</span>` : ''}
+          </div>
+        </div>
+      </div>`;
+      delay = Math.min(delay + 30, 180);
+    });
+
+    html += `</div>`;
+  });
+
+  body.innerHTML = html;
+
+  if (scrollToday && todayId) {
+    setTimeout(() => {
+      document.getElementById(todayId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  }
+}
+
+function changeMonth(delta) {
+  state.schedMonth += delta;
+  if (state.schedMonth > 12) { state.schedMonth = 1; state.schedYear++; }
+  if (state.schedMonth < 1)  { state.schedMonth = 12; state.schedYear--; }
+  updateMonthLabel();
+  loadScheduleData();
+}
+
+function updateMonthLabel() {
+  document.getElementById('month-label').textContent =
+    `${MONTH_NAMES[state.schedMonth - 1]} ${state.schedYear}`;
+}
+
+function updateSaveButton() {
+  loadSavedGroup();
+  const isSaved = state.savedGroup && state.savedGroup.id === state.scheduleGroupId;
+  const btn  = document.getElementById('sched-save-btn');
+  const icon = document.getElementById('sched-save-icon');
+  const text = document.getElementById('sched-save-text');
+  if (isSaved) {
+    btn.classList.add('saved');
+    icon.textContent = '⭐';
+    text.textContent = 'Группа сохранена';
+  } else {
+    btn.classList.remove('saved');
+    icon.textContent = '☆';
+    text.textContent = 'Сохранить группу';
+  }
+}
+
+function toggleSaveGroup() {
+  loadSavedGroup();
+  const isSaved = state.savedGroup && state.savedGroup.id === state.scheduleGroupId;
+  if (isSaved) {
+    state.savedGroup = null;
+    persistSavedGroup();
+    showToast('❌ Группа удалена из сохранённых');
+  } else {
+    state.savedGroup = {
+      id: state.scheduleGroupId,
+      name: state.scheduleGroupName,
+      instId: state.scheduleInstId,
+      courseId: state.scheduleCourseId,
+    };
+    persistSavedGroup();
+    showToast('⭐ Группа сохранена!');
+    if (tg) tg.HapticFeedback?.notificationOccurred('success');
+  }
+  updateSaveButton();
+}
+
+/* ───── Utilities ───── */
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+function escAttr(str) {
+  return String(str).replace(/'/g, "\\'").replace(/"/g, '\\"');
+}
+function formatDateKey(date) {
+  const d = String(date.getDate()).padStart(2,'0');
+  const m = String(date.getMonth()+1).padStart(2,'0');
+  const y = date.getFullYear();
+  return `${d}.${m}.${y}`;
+}
+function parseDateStr(str) {
+  // str is DD.MM.YYYY
+  const [d, m, y] = str.split('.');
+  return new Date(+y, +m - 1, +d);
+}
+function pluralLesson(n) {
+  if (n === 1) return 'пара';
+  if (n < 5) return 'пары';
+  return 'пар';
+}
+function showError(containerId, msg) {
+  document.getElementById(containerId).innerHTML =
+    `<div class="empty"><div class="empty-icon">⚠️</div><h3>Ошибка</h3><p>${msg}</p></div>`;
+}
+
+/* ───── Init ───── */
+loadSavedGroup();
+renderHome();
+</script>
+</body>
+</html>
