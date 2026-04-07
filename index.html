@@ -6,9 +6,6 @@
   <title>Расписание КГУ</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    /* ═══════════════════════════════════════════
-       TOKENS & THEME
-    ═══════════════════════════════════════════ */
     :root {
       --bg:          #0d1117;
       --bg-card:     #161b22;
@@ -32,7 +29,6 @@
       --font-mono:   'JetBrains Mono', 'Fira Code', monospace;
     }
 
-    /* Telegram light theme overrides */
     body.tg-light {
       --bg:          #f0f2f5;
       --bg-card:     #ffffff;
@@ -44,13 +40,8 @@
       --shadow:      0 2px 12px rgba(0,0,0,0.08);
     }
 
-    /* ═══════════════════════════════════════════
-       RESET & BASE
-    ═══════════════════════════════════════════ */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     html { height: 100%; }
-
     body {
       font-family: -apple-system, 'SF Pro Text', 'Segoe UI', sans-serif;
       background: var(--bg);
@@ -60,12 +51,8 @@
       overflow-x: hidden;
     }
 
-    /* ═══════════════════════════════════════════
-       LAYOUT SHELL
-    ═══════════════════════════════════════════ */
     #app { display: flex; flex-direction: column; min-height: 100vh; }
 
-    /* Bottom tab bar */
     .tab-bar {
       position: fixed;
       bottom: 0; left: 0; right: 0;
@@ -95,7 +82,6 @@
     .tab-btn.active { color: var(--accent); }
     .tab-btn.active svg { transform: scale(1.1); }
 
-    /* Page container */
     .page {
       display: none;
       flex-direction: column;
@@ -110,11 +96,6 @@
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* ═══════════════════════════════════════════
-       COMPONENTS
-    ═══════════════════════════════════════════ */
-
-    /* ── Page Header ── */
     .page-header {
       padding: 20px 16px 12px;
       position: sticky;
@@ -123,18 +104,9 @@
       z-index: 10;
       border-bottom: 1px solid var(--border);
     }
-    .page-header h1 {
-      font-size: 22px;
-      font-weight: 700;
-      letter-spacing: -0.4px;
-    }
-    .page-header p {
-      font-size: 13px;
-      color: var(--text-sub);
-      margin-top: 2px;
-    }
+    .page-header h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.4px; }
+    .page-header p  { font-size: 13px; color: var(--text-sub); margin-top: 2px; }
 
-    /* ── Back header ── */
     .back-header {
       display: flex;
       align-items: center;
@@ -160,9 +132,8 @@
     }
     .back-btn:active { background: var(--bg-hover); }
     .back-header-text h2 { font-size: 17px; font-weight: 600; }
-    .back-header-text p { font-size: 12px; color: var(--text-sub); }
+    .back-header-text p  { font-size: 12px; color: var(--text-sub); }
 
-    /* ── Search bar ── */
     .search-wrap {
       padding: 10px 16px;
       position: sticky;
@@ -183,9 +154,7 @@
     }
     .search-input:focus { border-color: var(--accent); }
     .search-input::placeholder { color: var(--text-muted); }
-    .search-wrap-inner {
-      position: relative;
-    }
+    .search-wrap-inner { position: relative; }
     .search-icon {
       position: absolute;
       left: 11px; top: 50%;
@@ -194,7 +163,6 @@
       pointer-events: none;
     }
 
-    /* ── List items ── */
     .list { padding: 8px 16px 0; display: flex; flex-direction: column; gap: 6px; }
     .list-item {
       display: flex;
@@ -214,7 +182,6 @@
     .list-item-sub  { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
     .list-item-arrow { color: var(--text-muted); flex-shrink: 0; }
 
-    /* groups grid */
     .groups-grid {
       padding: 8px 16px 0;
       display: grid;
@@ -237,7 +204,6 @@
     .group-btn:active { transform: scale(0.97); }
     .group-btn:hover  { background: var(--bg-hover); border-color: var(--accent); }
 
-    /* ── Section chip ── */
     .section-chip {
       margin: 16px 16px 0;
       font-size: 11px;
@@ -247,13 +213,7 @@
       color: var(--text-muted);
     }
 
-    /* ── Spinner ── */
-    .spinner-wrap {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 60px 0;
-    }
+    .spinner-wrap { display: flex; align-items: center; justify-content: center; padding: 60px 0; }
     .spinner {
       width: 36px; height: 36px;
       border: 3px solid var(--border);
@@ -263,17 +223,11 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── Empty state ── */
-    .empty {
-      text-align: center;
-      padding: 60px 24px;
-      color: var(--text-sub);
-    }
+    .empty { text-align: center; padding: 60px 24px; color: var(--text-sub); }
     .empty-icon { font-size: 48px; margin-bottom: 12px; }
     .empty h3 { font-size: 17px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
     .empty p  { font-size: 14px; line-height: 1.5; }
 
-    /* ── Toast ── */
     .toast {
       position: fixed;
       bottom: calc(72px + env(safe-area-inset-bottom));
@@ -294,9 +248,6 @@
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    /* ═══════════════════════════════════════════
-       SCHEDULE VIEW
-    ═══════════════════════════════════════════ */
     .sched-header {
       padding: 16px 16px 12px;
       background: var(--bg);
@@ -334,17 +285,9 @@
       transition: background 0.15s;
     }
     .month-nav-btn:active { background: var(--bg-hover); }
-    .month-nav-label {
-      font-size: 15px;
-      font-weight: 600;
-      flex: 1;
-      text-align: center;
-    }
+    .month-nav-label { font-size: 15px; font-weight: 600; flex: 1; text-align: center; }
 
-    /* Save button */
-    .save-bar {
-      padding: 0 16px 12px;
-    }
+    .save-bar { padding: 0 16px 12px; }
     .save-btn {
       width: 100%;
       padding: 11px;
@@ -362,13 +305,8 @@
       transition: all 0.2s;
       -webkit-tap-highlight-color: transparent;
     }
-    .save-btn.saved {
-      background: var(--gold-bg);
-      border-color: var(--gold);
-      color: var(--gold);
-    }
+    .save-btn.saved { background: var(--gold-bg); border-color: var(--gold); color: var(--gold); }
 
-    /* Day blocks */
     .sched-body { padding: 0 16px 12px; }
 
     .day-block { margin-bottom: 16px; }
@@ -379,35 +317,16 @@
       margin-bottom: 8px;
       padding: 0 2px;
     }
-    .day-num {
-      font-size: 26px;
-      font-weight: 800;
-      line-height: 1;
-      color: var(--accent);
-      font-family: var(--font-mono);
-    }
-    .day-name {
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      color: var(--text-sub);
-      text-transform: uppercase;
-    }
+    .day-num { font-size: 26px; font-weight: 800; line-height: 1; color: var(--accent); font-family: var(--font-mono); }
+    .day-name { font-size: 12px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-sub); text-transform: uppercase; }
     .day-today-badge {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.6px;
-      text-transform: uppercase;
-      background: var(--today-bg);
-      color: var(--today);
-      padding: 2px 8px;
-      border-radius: 20px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase;
+      background: var(--today-bg); color: var(--today);
+      padding: 2px 8px; border-radius: 20px;
       border: 1px solid rgba(63,185,80,0.3);
     }
-
     .day-block.is-today .day-num { color: var(--today); }
 
-    /* Lesson card */
     .lesson-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -419,71 +338,33 @@
       gap: 12px;
       animation: slideUp 0.2s ease both;
     }
-    .lesson-card.is-now {
-      border-left-color: var(--today);
-      background: var(--today-bg);
-    }
+    .lesson-card.is-now { border-left-color: var(--today); background: var(--today-bg); }
     @keyframes slideUp {
       from { opacity: 0; transform: translateY(8px); }
       to   { opacity: 1; transform: translateY(0); }
     }
     .lesson-time {
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--accent);
-      font-family: var(--font-mono);
-      white-space: nowrap;
-      min-width: 44px;
-      padding-top: 1px;
+      font-size: 13px; font-weight: 700; color: var(--accent);
+      font-family: var(--font-mono); white-space: nowrap; min-width: 44px; padding-top: 1px;
     }
     .lesson-card.is-now .lesson-time { color: var(--today); }
     .lesson-info { flex: 1; min-width: 0; }
-    .lesson-name {
-      font-size: 14px;
-      font-weight: 600;
-      line-height: 1.35;
-      margin-bottom: 4px;
-      word-break: break-word;
-    }
-    .lesson-meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px 10px;
-      font-size: 12px;
-      color: var(--text-sub);
-    }
+    .lesson-name { font-size: 14px; font-weight: 600; line-height: 1.35; margin-bottom: 4px; word-break: break-word; }
+    .lesson-meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; color: var(--text-sub); }
     .lesson-meta span { display: flex; align-items: center; gap: 3px; }
     .lesson-type {
       display: inline-block;
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.4px;
-      text-transform: uppercase;
-      background: var(--accent-dim);
-      color: var(--accent);
-      padding: 2px 7px;
-      border-radius: 20px;
-      margin-bottom: 5px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
+      background: var(--accent-dim); color: var(--accent);
+      padding: 2px 7px; border-radius: 20px; margin-bottom: 5px;
     }
 
-    /* ═══════════════════════════════════════════
-       HOME / MY GROUP
-    ═══════════════════════════════════════════ */
     .home-hero {
       padding: 24px 16px 12px;
       background: linear-gradient(160deg, var(--accent-glow) 0%, transparent 60%);
     }
-    .home-greeting {
-      font-size: 13px;
-      color: var(--text-sub);
-      margin-bottom: 4px;
-    }
-    .home-title {
-      font-size: 24px;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      margin-bottom: 4px;
-    }
+    .home-greeting { font-size: 13px; color: var(--text-sub); margin-bottom: 4px; }
+    .home-title { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 4px; }
 
     .saved-card {
       margin: 0 16px 16px;
@@ -493,49 +374,24 @@
       overflow: hidden;
       box-shadow: 0 0 0 1px var(--accent-glow), var(--shadow);
     }
-    .saved-card-body {
-      padding: 16px;
-    }
-    .saved-card-label {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.8px;
-      text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 4px;
-    }
-    .saved-card-name {
-      font-size: 20px;
-      font-weight: 700;
-      margin-bottom: 12px;
-    }
-    .saved-card-actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
+    .saved-card-body { padding: 16px; }
+    .saved-card-label { font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+    .saved-card-name { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+    .saved-card-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .saved-action-btn {
       padding: 10px;
       border-radius: var(--radius-sm);
       border: 1px solid var(--border);
       background: var(--bg);
       color: var(--text);
-      font-size: 13px;
-      font-weight: 600;
+      font-size: 13px; font-weight: 600;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
+      display: flex; align-items: center; justify-content: center; gap: 5px;
       -webkit-tap-highlight-color: transparent;
       transition: background 0.15s;
     }
     .saved-action-btn:active { background: var(--bg-hover); }
-    .saved-action-btn.primary {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #fff;
-    }
+    .saved-action-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
     .saved-action-btn.primary:active { opacity: 0.85; }
 
     .no-saved-card {
@@ -550,23 +406,17 @@
     .no-saved-title { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
     .no-saved-sub { font-size: 13px; color: var(--text-sub); margin-bottom: 16px; line-height: 1.5; }
     .primary-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
+      display: inline-flex; align-items: center; gap: 6px;
       padding: 11px 20px;
-      background: var(--accent);
-      color: #fff;
-      font-size: 14px;
-      font-weight: 600;
-      border: none;
-      border-radius: var(--radius-sm);
+      background: var(--accent); color: #fff;
+      font-size: 14px; font-weight: 600;
+      border: none; border-radius: var(--radius-sm);
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
       transition: opacity 0.15s;
     }
     .primary-btn:active { opacity: 0.85; }
 
-    /* Today widget */
     .today-widget {
       margin: 0 16px 12px;
       background: var(--bg-card);
@@ -575,53 +425,37 @@
       overflow: hidden;
     }
     .today-widget-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      display: flex; align-items: center; justify-content: space-between;
       padding: 12px 14px;
       border-bottom: 1px solid var(--border);
       background: var(--today-bg);
     }
-    .today-widget-title {
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--today);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
+    .today-widget-title { font-size: 13px; font-weight: 700; color: var(--today); display: flex; align-items: center; gap: 6px; }
     .today-count {
-      font-size: 11px;
-      font-weight: 600;
-      background: rgba(63,185,80,0.15);
-      color: var(--today);
-      padding: 2px 8px;
-      border-radius: 20px;
+      font-size: 11px; font-weight: 600;
+      background: rgba(63,185,80,0.15); color: var(--today);
+      padding: 2px 8px; border-radius: 20px;
     }
     .today-lesson-mini {
       padding: 10px 14px;
       border-bottom: 1px solid var(--border);
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
+      display: flex; gap: 10px; align-items: flex-start;
     }
     .today-lesson-mini:last-child { border-bottom: none; }
-    .today-time {
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--today);
-      font-family: var(--font-mono);
-      min-width: 40px;
-    }
+    .today-time { font-size: 12px; font-weight: 700; color: var(--today); font-family: var(--font-mono); min-width: 40px; }
     .today-name { font-size: 13px; font-weight: 500; }
     .today-room { font-size: 11px; color: var(--text-sub); }
+    .today-type {
+      display: inline-block;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
+      background: var(--accent-dim); color: var(--accent);
+      padding: 1px 6px; border-radius: 20px; margin-bottom: 3px;
+    }
   </style>
 </head>
 <body>
 
 <div id="app">
-
-  <!-- ═══════════ PAGES ═══════════ -->
 
   <!-- HOME -->
   <div class="page active" id="page-home">
@@ -629,15 +463,13 @@
       <div class="home-greeting" id="home-greeting">Добро пожаловать</div>
       <div class="home-title">Расписание КГУ</div>
     </div>
-
     <div id="home-saved-area">
       <div class="spinner-wrap"><div class="spinner"></div></div>
     </div>
-
     <div id="home-today-area"></div>
   </div>
 
-  <!-- SEARCH / SELECT -->
+  <!-- SEARCH -->
   <div class="page" id="page-search">
     <div class="page-header">
       <h1 id="search-page-title">Институт</h1>
@@ -674,7 +506,7 @@
         <button class="month-nav-btn" onclick="changeMonth(-1)">
           <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
         </button>
-        <span class="month-nav-label" id="month-label">Апрель 2025</span>
+        <span class="month-nav-label" id="month-label">Апрель 2026</span>
         <button class="month-nav-btn" onclick="changeMonth(1)">
           <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
         </button>
@@ -687,7 +519,6 @@
 
 </div>
 
-<!-- Tab bar -->
 <nav class="tab-bar">
   <button class="tab-btn active" id="tab-home" onclick="switchTab('home')">
     <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -699,14 +530,9 @@
   </button>
 </nav>
 
-<!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<!-- ═══════════════════════════════════════════
-     JAVASCRIPT
-═══════════════════════════════════════════ -->
 <script>
-/* ───── Telegram WebApp init ───── */
 const tg = window.Telegram?.WebApp;
 if (tg) {
   tg.ready();
@@ -714,18 +540,15 @@ if (tg) {
   if (tg.colorScheme === 'light') document.body.classList.add('tg-light');
 }
 
-/* ───── Constants ───── */
-const API_BASE = 'https://apeks.tksu.ru/api/call/schedule-schedule/student';
-const API_TOKEN = 'ccbce6b6-80b4-2e23-356e-39c53d75e8e8';
-const MONTH_NAMES = ['Январь','Февраль','Март','Апрель','Май','Июнь',
-                     'Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const API_BASE   = 'https://apeks.tksu.ru/api/call/schedule-schedule/student';
+const API_TOKEN  = 'ccbce6b6-80b4-2e23-356e-39c53d75e8e8';
+const MONTH_NAMES = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 const DAY_NAMES   = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
 
-/* ───── State ───── */
 let state = {
-  allData: null,          // raw API data
+  allData: null,
   institutes: [],
-  step: 'institutes',     // institutes | courses | groups
+  step: 'institutes',
   selectedInstitute: null,
   selectedCourse: null,
   scheduleGroupId: null,
@@ -734,28 +557,21 @@ let state = {
   scheduleCourseId: null,
   schedMonth: new Date().getMonth() + 1,
   schedYear: new Date().getFullYear(),
-  savedGroup: null,       // { id, name, instId, courseId }
+  savedGroup: null,
   scheduleCache: {},
   dataCache: null,
   dataCacheTs: 0,
 };
 
-/* ───── Storage helpers ───── */
 function storageGet(key) {
   try { return JSON.parse(localStorage.getItem(key)); } catch { return null; }
 }
 function storageSet(key, val) {
   try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
 }
+function loadSavedGroup() { state.savedGroup = storageGet('kgu_saved_group'); }
+function persistSavedGroup() { storageSet('kgu_saved_group', state.savedGroup); }
 
-function loadSavedGroup() {
-  state.savedGroup = storageGet('kgu_saved_group');
-}
-function persistSavedGroup() {
-  storageSet('kgu_saved_group', state.savedGroup);
-}
-
-/* ───── Toast ───── */
 function showToast(msg, duration = 2200) {
   const el = document.getElementById('toast');
   el.textContent = msg;
@@ -763,7 +579,6 @@ function showToast(msg, duration = 2200) {
   setTimeout(() => el.classList.remove('show'), duration);
 }
 
-/* ───── API ───── */
 async function apiRequest(params = {}) {
   const url = new URL(API_BASE);
   url.searchParams.set('token', API_TOKEN);
@@ -791,7 +606,6 @@ async function getSchedule(groupId, month, year) {
   return data;
 }
 
-/* ───── Parsing helpers ───── */
 function parseInstitutes(data) {
   if (!data?.groups) return [];
   return Object.entries(data.groups)
@@ -815,15 +629,10 @@ function parseGroups(data, instId, courseId) {
     .sort((a, b) => a.name.localeCompare(b.name, 'ru'));
 }
 
-/* ───── Tab switching ───── */
 function switchTab(tab) {
-  // highlight tabs
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
-
-  // show page
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-
   if (tab === 'search') {
     document.getElementById('page-search').classList.add('active');
     resetSearch();
@@ -833,11 +642,8 @@ function switchTab(tab) {
   }
 }
 
-/* ───── HOME PAGE ───── */
 function renderHome() {
   loadSavedGroup();
-
-  // Greeting
   const hour = new Date().getHours();
   const greet = hour < 12 ? 'Доброе утро ☀️' : hour < 18 ? 'Добрый день 🌤' : 'Добрый вечер 🌙';
   const tgUser = tg?.initDataUnsafe?.user;
@@ -854,17 +660,15 @@ function renderHome() {
           <div class="saved-card-label">⭐ Сохранённая группа</div>
           <div class="saved-card-name">${escHtml(state.savedGroup.name)}</div>
           <div class="saved-card-actions">
-            <button class="saved-action-btn primary" onclick="openSavedSchedule()">
-              📅 Расписание
-            </button>
-            <button class="saved-action-btn" onclick="openTodayFromHome()">
+            <button class="saved-action-btn primary" onclick="openTodayFromHome()">
               📌 Сегодня
+            </button>
+            <button class="saved-action-btn" onclick="openSavedSchedule()">
+              📅 Расписание
             </button>
           </div>
         </div>
       </div>`;
-
-    // Load today's lessons
     todayArea.innerHTML = '';
     loadTodayWidget();
   } else {
@@ -873,9 +677,7 @@ function renderHome() {
         <div class="no-saved-icon">📚</div>
         <div class="no-saved-title">Выберите свою группу</div>
         <div class="no-saved-sub">Найдите группу через поиск и сохраните её для быстрого доступа к расписанию</div>
-        <button class="primary-btn" onclick="switchTab('search')">
-          Найти группу
-        </button>
+        <button class="primary-btn" onclick="switchTab('search')">Найти группу</button>
       </div>`;
     todayArea.innerHTML = '';
   }
@@ -915,9 +717,11 @@ async function loadTodayWidget() {
       const t = times[l.lesson_time_id];
       const time = t ? `${t.hour_from}:${String(t.minute_from).padStart(2,'0')}` : '??:??';
       const room = l.classroom ? `Каб. ${l.classroom}` : '';
+      const classType = l.class_type_name || '';
       return `<div class="today-lesson-mini">
         <div class="today-time">${time}</div>
         <div>
+          ${classType ? `<div class="today-type">${escHtml(classType)}</div>` : ''}
           <div class="today-name">${escHtml(l.discipline || 'Занятие')}</div>
           ${room ? `<div class="today-room">${escHtml(room)}</div>` : ''}
         </div>
@@ -929,9 +733,7 @@ async function loadTodayWidget() {
       <div style="padding:16px 16px 0">
         <div class="today-widget">
           <div class="today-widget-head">
-            <div class="today-widget-title">
-              <span>Занятия</span>
-            </div>
+            <div class="today-widget-title"><span>Занятия</span></div>
             <div class="today-count">${sorted.length} ${pluralLesson(sorted.length)}</div>
           </div>
           ${items}
@@ -944,25 +746,13 @@ async function loadTodayWidget() {
 
 function openSavedSchedule() {
   if (!state.savedGroup) return;
-  openSchedule(
-    state.savedGroup.id,
-    state.savedGroup.name,
-    state.savedGroup.instId,
-    state.savedGroup.courseId
-  );
+  openSchedule(state.savedGroup.id, state.savedGroup.name, state.savedGroup.instId, state.savedGroup.courseId);
 }
 function openTodayFromHome() {
   if (!state.savedGroup) return;
-  openSchedule(
-    state.savedGroup.id,
-    state.savedGroup.name,
-    state.savedGroup.instId,
-    state.savedGroup.courseId,
-    true  // scroll to today
-  );
+  openSchedule(state.savedGroup.id, state.savedGroup.name, state.savedGroup.instId, state.savedGroup.courseId, true);
 }
 
-/* ───── SEARCH / SELECTION FLOW ───── */
 function resetSearch() {
   state.step = 'institutes';
   document.getElementById('search-page-title').textContent = 'Институт';
@@ -974,14 +764,9 @@ function resetSearch() {
 function renderSearchList() {
   const listEl = document.getElementById('search-list');
   listEl.innerHTML = `<div class="spinner-wrap"><div class="spinner"></div></div>`;
-
-  if (state.step === 'institutes') {
-    loadInstitutesList();
-  } else if (state.step === 'courses') {
-    loadCoursesList();
-  } else if (state.step === 'groups') {
-    loadGroupsList();
-  }
+  if (state.step === 'institutes') loadInstitutesList();
+  else if (state.step === 'courses') loadCoursesList();
+  else if (state.step === 'groups') loadGroupsList();
 }
 
 async function loadInstitutesList() {
@@ -1107,17 +892,12 @@ function goBackInSearch() {
   renderSearchList();
 }
 
-/* ───── Search input ───── */
 let searchTimeout;
 document.getElementById('search-input').addEventListener('input', () => {
   clearTimeout(searchTimeout);
-  searchTimeout = setTimeout(() => {
-    if (state.step === 'groups') renderGroupList([]);  // will be populated
-    renderSearchList();
-  }, 200);
+  searchTimeout = setTimeout(() => renderSearchList(), 200);
 });
 
-/* ───── SCHEDULE PAGE ───── */
 async function openSchedule(groupId, groupName, instId, courseId, scrollToday = false) {
   state.scheduleGroupId = groupId;
   state.scheduleGroupName = groupName;
@@ -1128,7 +908,6 @@ async function openSchedule(groupId, groupName, instId, courseId, scrollToday = 
   state.schedMonth = now.getMonth() + 1;
   state.schedYear = now.getFullYear();
 
-  // hide tabs, show schedule page
   document.querySelector('.tab-bar').style.display = 'none';
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-schedule').classList.add('active');
@@ -1144,7 +923,6 @@ async function openSchedule(groupId, groupName, instId, courseId, scrollToday = 
 function goBackFromSchedule() {
   document.querySelector('.tab-bar').style.display = 'flex';
   document.getElementById('page-schedule').classList.remove('active');
-  // restore last active tab
   const activeTab = document.querySelector('.tab-btn.active');
   const tabId = activeTab?.id?.replace('tab-', '') || 'home';
   document.getElementById(`page-${tabId}`).classList.add('active');
@@ -1173,7 +951,6 @@ function renderScheduleBody(data, scrollToday = false) {
     return;
   }
 
-  // Group by date
   const byDate = {};
   lessons.forEach(l => {
     if (!byDate[l.date]) byDate[l.date] = [];
@@ -1184,11 +961,7 @@ function renderScheduleBody(data, scrollToday = false) {
   const nowHour = new Date().getHours();
   const nowMin  = new Date().getMinutes();
 
-  // Sort dates
-  const sortedDates = Object.keys(byDate).sort((a, b) => {
-    const da = parseDateStr(a), db = parseDateStr(b);
-    return da - db;
-  });
+  const sortedDates = Object.keys(byDate).sort((a, b) => parseDateStr(a) - parseDateStr(b));
 
   let html = '';
   let todayId = '';
@@ -1262,8 +1035,7 @@ function changeMonth(delta) {
 }
 
 function updateMonthLabel() {
-  document.getElementById('month-label').textContent =
-    `${MONTH_NAMES[state.schedMonth - 1]} ${state.schedYear}`;
+  document.getElementById('month-label').textContent = `${MONTH_NAMES[state.schedMonth - 1]} ${state.schedYear}`;
 }
 
 function updateSaveButton() {
@@ -1304,7 +1076,6 @@ function toggleSaveGroup() {
   updateSaveButton();
 }
 
-/* ───── Utilities ───── */
 function escHtml(str) {
   return String(str)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
@@ -1320,7 +1091,6 @@ function formatDateKey(date) {
   return `${d}.${m}.${y}`;
 }
 function parseDateStr(str) {
-  // str is DD.MM.YYYY
   const [d, m, y] = str.split('.');
   return new Date(+y, +m - 1, +d);
 }
@@ -1334,7 +1104,6 @@ function showError(containerId, msg) {
     `<div class="empty"><div class="empty-icon">⚠️</div><h3>Ошибка</h3><p>${msg}</p></div>`;
 }
 
-/* ───── Init ───── */
 loadSavedGroup();
 renderHome();
 </script>
